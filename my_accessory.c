@@ -11,7 +11,12 @@ homekit_characteristic_t cha_current_co2_level = HOMEKIT_CHARACTERISTIC_(CARBON_
 homekit_characteristic_t cha_current_quality_level = HOMEKIT_CHARACTERISTIC_(AIR_QUALITY, 5);
 
 homekit_accessory_t *accessories[] = {
-    HOMEKIT_ACCESSORY(.id=1, .category=homekit_accessory_category_sensor, .services=(homekit_service_t*[]) {
+    HOMEKIT_ACCESSORY(
+        .id=1,
+        // !NOT set one-line!
+        .category=homekit_accessory_category_sensor, 
+        .services=(homekit_service_t*[]
+    ) {
         HOMEKIT_SERVICE(ACCESSORY_INFORMATION, .characteristics=(homekit_characteristic_t*[]) {
             HOMEKIT_CHARACTERISTIC(NAME, "CO2 Sensor"),
             HOMEKIT_CHARACTERISTIC(MANUFACTURER, "Esp home"),
@@ -33,6 +38,7 @@ homekit_accessory_t *accessories[] = {
 
 homekit_server_config_t config = {
 		.accessories = accessories,
-		.password = "111-11-111"
+		.password = "111-11-111",
+        .setupId = "3TXB"
 };
 

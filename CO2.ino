@@ -10,7 +10,8 @@
 // пин кнопки сброса и калибровки
 #define BUTTON_PIN 13
 
-#define HOMEKIT_PASS "000-01-234"
+#define HOMEKIT_PASS "000-22-279"
+#define HOMEKIT_SETUP_ID "3TXB"
 
 // качество воздуха homekit
 enum air_quality {
@@ -80,6 +81,7 @@ static uint32_t next_report_millis = 0;
 
 void my_homekit_setup() {
     config.password = HOMEKIT_PASS;
+    config.setupId = HOMEKIT_SETUP_ID;
     arduino_homekit_setup(&config);
 }
 
