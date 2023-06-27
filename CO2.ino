@@ -2,13 +2,14 @@
 #include <TroykaMQ.h>
 #include <arduino_homekit_server.h>
 #include "wifi_info.h"
+#include <EasyButton.h>
 
 #define LOG_D(fmt, ...)   printf_P(PSTR(fmt "\n") , ##__VA_ARGS__);
 
 // имя для пина, к которому подключен датчик
 #define PIN_MQ135         A0
 // пин кнопки сброса и калибровки
-#define BUTTON_PIN 13
+#define BUTTON_PIN 14
 
 #define HOMEKIT_PASS "000-22-279"
 #define HOMEKIT_SETUP_ID "3TXB"
@@ -33,24 +34,28 @@ EasyButton button(BUTTON_PIN);
 
 
 void calibrate() {
+    LOG_D("Calibrating...");
     // выполняем калибровку датчика на чистом воздухе
     mq135.calibrate();
+    LOG_D("Calibrating...Done");
 }
 
 void reset_homekit() {
+    LOG_D("Reseting device...");
     // сбрасываем информацию о homekit
     homekit_server_reset();
     homekit_storage_reset();
+    LOG_D("Reseting device...Done");
 }
 
 void setup() {
     Serial.begin(115200);
     
     button.begin();
-    // одно нажатие кнопки - калибровка датчика
-    button.onSequence(1, timeout, calibrate);
-    // долгое нажатие (5с) - сброс homekit
-    button.onPressedFor(5000, reset_homekit);
+    // три нажатия кнопки - калибровка датчика
+    button.onSequence(3, timeout, calibrate);
+    // долгое нажатие (3с) - сброс homekit
+    button.onPressedFor(3000, reset_homekit);
 
     wifi_connect();
 
@@ -64,7 +69,6 @@ void setup() {
 void loop() {
     button.read();
     my_homekit_loop();
-    delay(10);
 }
 
 //==============================
@@ -102,37 +106,46 @@ void my_homekit_loop() {
 }
 
 void my_homekit_report() {
-    float dioxide = mq135.readCO2();
-    if (dioxide > 100000){
-      dioxide = 100000;
-    }
-    cha_current_co2_level.value.float_value = dioxide;
-    LOG_D("Current co2: %.1f", dioxide);
-    homekit_characteristic_notify(&cha_current_co2_level, cha_current_co2_level.value);
-
     int quality = air_quality::unknown;
+    
+    
+    if (mq135.isCalibrated()) {
+      float dioxide = mq135.readCO2();
+      if (dioxide > 100000){
+        dioxide = 100000;
+      }
+      cha_current_co2_level.value.float_value = dioxide;
+      LOG_D("Current co2: %.1f", dioxide);
+      homekit_characteristic_notify(&cha_current_co2_level, cha_current_co2_level.value);
 
-    if (dioxide <= 600) {
-        quality = air_quality::excellent;
-    }
+      if (dioxide <= 600) {
+          quality = air_quality::excellent;
+          LOG_D("Current quality: excellent");
+      }
 
-    if (dioxide > 600 && dioxide <= 800) {
-        quality = air_quality::good;
-    }
+      if (dioxide > 600 && dioxide <= 800) {
+          quality = air_quality::good;
+          LOG_D("Current quality: good");
+      }
 
-    if (dioxide > 800 && dioxide <= 1000) {
-        quality = air_quality::may_good;
-    }
+      if (dioxide > 800 && dioxide <= 1000) {
+          quality = air_quality::may_good;
+          LOG_D("Current quality: may_good");
+      }
 
-    if (dioxide > 1000 && dioxide <= 1400) {
-        quality = air_quality::low;
-    }
+      if (dioxide > 1000 && dioxide <= 1400) {
+          quality = air_quality::low;
+          LOG_D("Current quality: low");
+      }
 
-    if (dioxide > 1400) {
-        quality = air_quality::bad;
+      if (dioxide > 1400) {
+          quality = air_quality::bad;
+          LOG_D("Current quality: bad");
+      }
+    }else {
+      LOG_D("Current quality: unknown, please press button 3 times");
     }
 
     cha_current_quality_level.value.uint8_value = quality;
-    LOG_D("Current quality: %d", quality);
     homekit_characteristic_notify(&cha_current_quality_level, cha_current_quality_level.value);    
 }
